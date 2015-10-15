@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<title>Neighborhood Map Project</title>
+		 <link href="css/style.css" rel="stylesheet" type="text/css">
+		<script type="text/javascript" src="http://maps.googleapis.com/maps/api/js?v=3.exp&sensor=false&libraries=places"></script>
+		<meta name="viewport" content="width=device-width">
+	</head>
+	<body>
+		<h1>Neighborhood Map Project</h1>
+		<input type="text" data-bind="value: filterText, valueUpdate:'afterkeydown'" placeholder="Attraction location" />
+		<input type="button" value="Filter" />
+		<ul data-bind="foreach: filteredRecords">
+			<li data-bind="text: name, click: registerClick"></li>
+		</ul>
+		<div id="mapDiv">
+			<h2>Full-Screen Map</h2>
+		</div>
+		<script src="js/lib/knockout-3.3.0.js"></script>
+		<script src="js/lib/jquery-1.11.3.js"></script>
+		<script src="js/app.js"></script>
+	</body>
+</html>
