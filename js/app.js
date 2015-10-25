@@ -1,130 +1,96 @@
-var MapMarker = function MapMarker(name, lat, lon) {
+var MapMarker = function MapMarker(name, lat, lon, phone) {
+  
   var self = this;
   this.name = ko.observable(name);
-  //this.address = ko.observable(placeData.formatted_address);
   this.lat = ko.observable(lat);
   this.lon = ko.observable(lon);
- 
-  //this.name = ko.observable(name);
-  //this.address = ko.observable(address);
+  self.phone = phone;
   
   var bounds = window.mapBounds;
-	 /*
-	  // marker is an object with additional data about the pin for a single location
-	  var marker = new google.maps.Marker({
-		  map: map,
-		  position: placeData.geometry.location,
-		  title: placeData.name,
-		  animation: google.maps.Animation.DROP
-	  });
-	  */
-	  self.marker = new google.maps.Marker({
-		  map: map,
-		  position: new google.maps.LatLng(lat, lon),
-		  title: name,
-		  animation: google.maps.Animation.DROP
-	  });
-	  
-	  //marker.addListener('click', toggleBounce);
-	  
-	  function toggleBounce() {
-		  if (self.marker.getAnimation() !== null) {
-			self.marker.setAnimation(null);
-		  } else {
-			self.marker.setAnimation(google.maps.Animation.BOUNCE);
-		  }
-	  }
-	  /*
-	  var infoWindow = new google.maps.InfoWindow({
-		  content: placeData.name
-	  });
-	  */
-	  self.contentString = '<div>'+name+'<br/>'+lat+'<br/>'+lon+'</div>';
-	  /*
-	  this.infoWindow = new google.maps.InfoWindow({
-		  content: contentString
-	  });
-	  */
-	  google.maps.event.addListener(self.marker, 'click', function() {
-		infoWindow.setContent(self.contentString);
-		infoWindow.open(map,self.marker);
-		toggleBounce();
-	  });
-	  
-	  // the reason multiple items are getting and staying selected
-	  //this.currentSelected = ko.observable();
-	 /* 
-	  this.registerClick = function() {
-		// do whatever
-		infoWindow.open(map,marker);
-		toggleBounce();
-		this.currentSelected(this.name);
-	  }
-	  */
-	/*  
-	  currentSelected: ko.observable(),
-	  selectItem: function (that, site) {
-	    that.currentSelected(site.siteID);
-	  }
-	  */
-	  this.isVisible = ko.observable(false);
-/*
-	  this.isVisible.subscribe(function(currentState) {
-		if (currentState) {
-		  this.marker.setMap(map);
-		} else {
-		  this.marker.setMap(null);
-		}
-	  });
-*/	  
-	  this.isVisible.subscribe(function(currentState) {
-		if (currentState) {
-		  self.marker.setMap(map);
-		} else {
-		  self.marker.setMap(null);
-		}
-	  });
 
+  self.marker = new google.maps.Marker({
+	  map: map,
+	  position: new google.maps.LatLng(lat, lon),
+	  title: name,
+	  animation: google.maps.Animation.DROP
+  });
+  
+  google.maps.event.addListener(self.marker, 'click', function() {
+	var new_marker = self.marker;
+	loadYelpContent(self);
+	infoWindow.open(map,new_marker);
+	animateMarker(new_marker);
+  });
+  
+  this.isVisible = ko.observable(false);
 
-	  this.isVisible(true);
-	  
-	  //bounds.extend(placeData.geometry.location);
-	 //bounds.extend(new google.maps.LatLng(lat, lon));
-	  // fit the map to the new marker
-	 // map.fitBounds(bounds);
-	  // center the map
-	  //map.setCenter(bounds.getCenter());
- 
+  this.isVisible.subscribe(function(currentState) {
+	if (currentState) {
+	  self.marker.setMap(map);
+	} else {
+	  self.marker.setMap(null);
+	}
+  });
+
+  this.isVisible(true);
+  
+  //bounds.extend(placeData.geometry.location);
+  bounds.extend(new google.maps.LatLng(lat, lon));
+  // fit the map to the new marker
+  map.fitBounds(bounds);
+  // center the map
+  map.setCenter(bounds.getCenter()); 
 }
 
 
-var contentString, map, infoWindow;
+var contentString, map, infoWindow, previous_animation, num, placeList;
 
-  function googleSuccess() {
+function googleSuccess() {
 	    
 	infoWindow = new google.maps.InfoWindow({
 		  content: contentString
 	});
+	
 	map = new google.maps.Map(document.getElementById('mapDiv'), {
 		zoom: 11,
 		center: {lat: 33.341389, lng: -105.666111},
 		mapTypeId: google.maps.MapTypeId.ROADMAP	
 	});
-	
+	// Sets the boundaries of the map based on pin locations
+	window.mapBounds = new google.maps.LatLngBounds();
+  
 	ko.applyBindings(new PlacesViewModel());
-  }
+};
   
-  function googleError() {
+function googleError() {
 	alert("Google Maps Error");
+};
+
+function animateMarker(new_marker) {
+	if( previous_animation ) {
+		if(previous_animation.title === new_marker.title){
+			toggleBounce(new_marker)
+		} else {	
+			previous_animation.setAnimation(null);
+			new_marker.setAnimation(google.maps.Animation.BOUNCE);
+			previous_animation = new_marker;
+		}
+	} else {
+		new_marker.setAnimation(google.maps.Animation.BOUNCE);
+		previous_animation = new_marker;
+	}
+};
+
+function toggleBounce(new_marker) {
+  if (new_marker.getAnimation() !== null) {
+	new_marker.setAnimation(null);
+  } else {
+	new_marker.setAnimation(google.maps.Animation.BOUNCE);
   }
+};
   
-  var $yelpElem = $('#yelp-info');
   
-  //var wikiUrl = 'https://en.wikipediaadfadf.org/w/api.php?action=opensearch&search='+city+'&format=json&callback=wikiCallback';
-  
-  var yelpUrl = 'https://api.yelp.com/v2/business/moisy-water-winery-ruidoso';
-  
-  function loadYelp() {
+function loadYelpContent(currentMarker) {
 	
 	var auth = {
 		//
@@ -143,22 +109,33 @@ var contentString, map, infoWindow;
 
 	//var terms = 'food';
 	//var near = 'San+Francisco';
+	var terms = currentMarker.name();
+	var near = 'Ruidoso';
 
 	var accessor = {
 		consumerSecret : auth.consumerSecret,
 		tokenSecret : auth.accessTokenSecret
 	};
 	parameters = [];
-	//parameters.push(['term', terms]);
-	//parameters.push(['location', near]);
+	if(!currentMarker.phone) {
+		parameters.push(['term', terms]);
+		parameters.push(['location', near]);
+	}
 	parameters.push(['callback', 'cb']);
 	parameters.push(['oauth_consumer_key', auth.consumerKey]);
 	parameters.push(['oauth_consumer_secret', auth.consumerSecret]);
 	parameters.push(['oauth_token', auth.accessToken]);
 	parameters.push(['oauth_signature_method', 'HMAC-SHA1']);
+	
+	var yelpUrl = ''
+	if(currentMarker.phone){
+		yelpUrl = 'https://api.yelp.com/v2/phone_search/?phone='+currentMarker.phone;
+	} else {
+		yelpUrl = 'https://api.yelp.com/v2/search/?';
+	}
 
 	var message = {
-		'action' : 'https://api.yelp.com/v2/business/noisy-water-winery-ruidoso',
+		'action' : yelpUrl,
 		'method' : 'GET',
 		'parameters' : parameters
 	};
@@ -168,36 +145,39 @@ var contentString, map, infoWindow;
 
 	var parameterMap = OAuth.getParameterMap(message.parameters);
 	parameterMap.oauth_signature = OAuth.percentEncode(parameterMap.oauth_signature)
-	console.log(parameterMap);
-	
+
 	$.ajax({
 		'url' : message.action,
 		'data' : parameterMap,
 		'cache' : true,
 		'dataType' : 'jsonp',
+		'timeout' : 5000,
 		'jsonpCallback' : 'cb',
 		'success' : function(data, textStats, XMLHttpRequest) {
-			console.log(data);
-			//$("body").append(output);
-			var info = "<li>Telephone: "+data.display_phone+"</li>"
-			var pic = "<li><img src='"+data.image_url+"'/></li>";
-			$yelpElem.append(info+pic);
+			console.log("Yelp Success");
+			var contentString = '<div>'+currentMarker.name()+'<br/>Rating: '+ data.businesses[0].rating +'</div>';
+			infoWindow.setContent(contentString);
+		},
+		'error' : function(parsedjson, textStatus, errorThrown) {
+           alert('Yelp data cannot be loaded '+errorThrown);
 		}
 	});
-  };
+	
+};
 	  
 function PlacesViewModel () {
-	console.log("ViewModel");
-	var self = this;
 	
+	var self = this;
+		
 	var placeList = ko.observableArray([
-		new MapMarker('Noisy Water Winery','33.33138','-105.669602'),
-		new MapMarker('Hubbard Museum of the American West','33.332302','-105.59623699999997'),
-		new MapMarker('Spencer Theater for the Performing Arts','33.434','-105.60209299999997'),
-		new MapMarker('Ski Apache','33.397343','-105.788771'),
-		new MapMarker('Flying J Ranch','33.41421','-105.66796699999998')
+		new MapMarker('Noisy Water Winery','33.33138','-105.669602','575-257-9335'),
+		new MapMarker('Hubbard Museum of the American West','33.332302','-105.59623699999997','575-378-4142'),
+		new MapMarker('Spencer Theater for the Performing Arts','33.434','-105.60209299999997',''),
+		new MapMarker('Ski Apache','33.397343','-105.788771','575-464-3600'),
+		new MapMarker('Flying J Ranch','33.41421','-105.66796699999998','575-336-4330')
 	]);
 	
+	// filter map markers from search input	
 	self.filterText  = ko.observable('');
 	
 	self.filteredRecords = ko.computed(function () {
@@ -210,46 +190,45 @@ function PlacesViewModel () {
 		});
 	});
 	
-	// 	  this.currentSelected = ko.observable();
-	//		want to set a location upon loading the app
-	//  this Map Marker shud have the info window open
+	// select initial map marker
 	this.currentSelected = ko.observable( this.filteredRecords()[0] );
-	//this.currentSelected().infoWindow
-	//google.maps.event.trigger(this.filteredRecords()[0], 'click');
 	var currentPlace = this.filteredRecords()[0];
-	infoWindow.setContent(currentPlace.contentString);
-	infoWindow.open(map,currentPlace.marker);
-	// undefined - probably since callback
-	//currentPlace.infoWindow.open(map, currentPlace.marker);
-	
-	  this.registerClick = function(that, clickedPlace) {
-		  // do i need to issue a click event
-		 // google.maps.event.trigger(clickedPlace, 'click');
-		//clickedPlace.infoWindow.open(map,clickedPlace.marker);
-		infoWindow.setContent(clickedPlace.contentString);
-		infoWindow.open(map,clickedPlace.marker);
-		//toggleBounce();
-		console.log("click me");
+	var new_marker = currentPlace.marker;
+	loadYelpContent(currentPlace);
+	infoWindow.open(map,new_marker);
+	animateMarker(new_marker)
+
+	// respond to clicks from the list
+    this.registerClick = function(that, clickedPlace) {
+		var new_marker = clickedPlace.marker;
+		loadYelpContent(clickedPlace);
+		infoWindow.open(map,new_marker);
+		animateMarker(new_marker);
 		that.currentSelected(clickedPlace.name);
-	  }
+	}
 	 
 };
-//ko.applyBindings(new PlacesViewModel());
 
+// Vanilla JS way to listen for resizing of the window
+// and adjust map bounds
+window.addEventListener('resize', function(e) {
+  // Make sure the map bounds get updated on page resize
+  map.fitBounds(mapBounds);
+});
 /*
-       * Open the drawer when the menu ison is clicked.
-       */
-      var menu = document.querySelector('#menu');
-      var main = document.querySelector('main');
-      var drawer = document.querySelector('#drawer');
+* Open the drawer when the menu ison is clicked.
+*/
+var menu = document.querySelector('#menu');
+var main = document.querySelector('main');
+var drawer = document.querySelector('#drawer');
 
-      menu.addEventListener('click', function(e) {
-        drawer.classList.toggle('open');
-        e.stopPropagation();
-      });
-      main.addEventListener('click', function() {
-        drawer.classList.remove('open');
-      });
+menu.addEventListener('click', function(e) {
+	drawer.classList.toggle('open');
+	e.stopPropagation();
+});
+main.addEventListener('click', function() {
+	drawer.classList.remove('open');
+});
 	  
 
 	  
