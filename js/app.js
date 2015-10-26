@@ -1,54 +1,54 @@
+'use strict';
+
 var MapMarker = function MapMarker(name, lat, lon, phone) {
+	var self = this;
+	this.name = ko.observable(name);
+	this.lat = ko.observable(lat);
+	this.lon = ko.observable(lon);
+	self.phone = phone;
   
-  var self = this;
-  this.name = ko.observable(name);
-  this.lat = ko.observable(lat);
-  this.lon = ko.observable(lon);
-  self.phone = phone;
-  
-  var bounds = window.mapBounds;
+	var bounds = window.mapBounds;
 
-  self.marker = new google.maps.Marker({
-	  map: map,
-	  position: new google.maps.LatLng(lat, lon),
-	  title: name,
-	  animation: google.maps.Animation.DROP
-  });
+	self.marker = new google.maps.Marker({
+		map: map,
+		position: new google.maps.LatLng(lat, lon),
+		title: name,
+		animation: google.maps.Animation.DROP
+	});
   
-  google.maps.event.addListener(self.marker, 'click', function() {
-	var new_marker = self.marker;
-	loadYelpContent(self);
-	infoWindow.open(map,new_marker);
-	animateMarker(new_marker);
-  });
+	google.maps.event.addListener(self.marker, 'click', function() {
+		var new_marker = self.marker;
+		loadYelpContent(self);
+		infoWindow.open(map,new_marker);
+		animateMarker(new_marker);
+	});
   
-  this.isVisible = ko.observable(false);
+	this.isVisible = ko.observable(false);
 
-  this.isVisible.subscribe(function(currentState) {
-	if (currentState) {
-	  self.marker.setMap(map);
-	} else {
-	  self.marker.setMap(null);
-	}
-  });
+	this.isVisible.subscribe(function(currentState) {
+		if (currentState) {
+			self.marker.setVisible(true);
+		} else {
+			self.marker.setVisible(false);
+		}
+	});
 
-  this.isVisible(true);
+	this.isVisible(true);
   
-  //bounds.extend(placeData.geometry.location);
-  bounds.extend(new google.maps.LatLng(lat, lon));
-  // fit the map to the new marker
-  map.fitBounds(bounds);
-  // center the map
-  map.setCenter(bounds.getCenter()); 
-}
+	//bounds.extend(placeData.geometry.location);
+	bounds.extend(new google.maps.LatLng(lat, lon));
+	// fit the map to the new marker
+	map.fitBounds(bounds);
+	// center the map
+	map.setCenter(bounds.getCenter()); 
+};
 
 
 var contentString, map, infoWindow, previous_animation, num, placeList;
 
-function googleSuccess() {
-	    
+function googleSuccess() {   
 	infoWindow = new google.maps.InfoWindow({
-		  content: contentString
+		content: contentString
 	});
 	
 	map = new google.maps.Map(document.getElementById('mapDiv'), {
@@ -60,16 +60,16 @@ function googleSuccess() {
 	window.mapBounds = new google.maps.LatLngBounds();
   
 	ko.applyBindings(new PlacesViewModel());
-};
+}
   
 function googleError() {
 	alert("Google Maps Error");
-};
+}
 
 function animateMarker(new_marker) {
 	if( previous_animation ) {
 		if(previous_animation.title === new_marker.title){
-			toggleBounce(new_marker)
+			toggleBounce(new_marker);
 		} else {	
 			previous_animation.setAnimation(null);
 			new_marker.setAnimation(google.maps.Animation.BOUNCE);
@@ -79,19 +79,18 @@ function animateMarker(new_marker) {
 		new_marker.setAnimation(google.maps.Animation.BOUNCE);
 		previous_animation = new_marker;
 	}
-};
+}
 
 function toggleBounce(new_marker) {
-  if (new_marker.getAnimation() !== null) {
-	new_marker.setAnimation(null);
-  } else {
-	new_marker.setAnimation(google.maps.Animation.BOUNCE);
-  }
-};
+	if (new_marker.getAnimation() !== null) {
+		new_marker.setAnimation(null);
+	} else {
+		new_marker.setAnimation(google.maps.Animation.BOUNCE);
+	}
+}
   
   
 function loadYelpContent(currentMarker) {
-	
 	var auth = {
 		//
 		// Update with your auth tokens.
@@ -116,8 +115,8 @@ function loadYelpContent(currentMarker) {
 		consumerSecret : auth.consumerSecret,
 		tokenSecret : auth.accessTokenSecret
 	};
-	parameters = [];
-	if(!currentMarker.phone) {
+	var parameters = [];
+	if( !currentMarker.phone ) {
 		parameters.push(['term', terms]);
 		parameters.push(['location', near]);
 	}
@@ -127,8 +126,8 @@ function loadYelpContent(currentMarker) {
 	parameters.push(['oauth_token', auth.accessToken]);
 	parameters.push(['oauth_signature_method', 'HMAC-SHA1']);
 	
-	var yelpUrl = ''
-	if(currentMarker.phone){
+	var yelpUrl = '';
+	if( currentMarker.phone ){
 		yelpUrl = 'https://api.yelp.com/v2/phone_search/?phone='+currentMarker.phone;
 	} else {
 		yelpUrl = 'https://api.yelp.com/v2/search/?';
@@ -144,7 +143,7 @@ function loadYelpContent(currentMarker) {
 	OAuth.SignatureMethod.sign(message, accessor);
 
 	var parameterMap = OAuth.getParameterMap(message.parameters);
-	parameterMap.oauth_signature = OAuth.percentEncode(parameterMap.oauth_signature)
+	parameterMap.oauth_signature = OAuth.percentEncode(parameterMap.oauth_signature);
 
 	$.ajax({
 		'url' : message.action,
@@ -159,14 +158,13 @@ function loadYelpContent(currentMarker) {
 			infoWindow.setContent(contentString);
 		},
 		'error' : function(parsedjson, textStatus, errorThrown) {
-           alert('Yelp data cannot be loaded '+errorThrown);
+			alert('Yelp data cannot be loaded '+errorThrown);
 		}
 	});
 	
-};
+}
 	  
 function PlacesViewModel () {
-	
 	var self = this;
 		
 	var placeList = ko.observableArray([
@@ -182,7 +180,7 @@ function PlacesViewModel () {
 	
 	self.filteredRecords = ko.computed(function () {
 		return ko.utils.arrayFilter(placeList(), function ( rec ) {
-            var doesMatch = self.filterText ().length == 0 || rec.name().toLowerCase().indexOf(self.filterText ().toLowerCase()) > -1;
+			var doesMatch = self.filterText().length === 0 || rec.name().toLowerCase().indexOf(self.filterText().toLowerCase()) > -1;
 			
 			rec.isVisible(doesMatch);
 			
@@ -196,7 +194,7 @@ function PlacesViewModel () {
 	var new_marker = currentPlace.marker;
 	loadYelpContent(currentPlace);
 	infoWindow.open(map,new_marker);
-	animateMarker(new_marker)
+	animateMarker(new_marker);
 
 	// respond to clicks from the list
     this.registerClick = function(that, clickedPlace) {
@@ -205,15 +203,15 @@ function PlacesViewModel () {
 		infoWindow.open(map,new_marker);
 		animateMarker(new_marker);
 		that.currentSelected(clickedPlace.name);
-	}
+	};
 	 
-};
+}
 
 // Vanilla JS way to listen for resizing of the window
 // and adjust map bounds
 window.addEventListener('resize', function(e) {
-  // Make sure the map bounds get updated on page resize
-  map.fitBounds(mapBounds);
+	// Make sure the map bounds get updated on page resize
+	map.fitBounds(mapBounds);
 });
 /*
 * Open the drawer when the menu ison is clicked.
