@@ -95,15 +95,9 @@ function loadYelpContent(currentMarker) {
 		//
 		// Update with your auth tokens.
 		//
-		consumerKey : "euBfBx5SQjHNAezR9xtXKg",
-		consumerSecret : "JG53OZAb1zoDQfAGm7HQx8vAkwo",
-		accessToken : "VRb4ue8gf9pHiN5A3NIuM3DcMH5JHLWm",
-		// This example is a proof of concept, for how to use the Yelp v2 API with javascript.
+		accessToken : "bG5PPVfMNsIsrQLvRP_1RMWsycPUTTQXME9JuR7JgETYV_lCyU6GsH_IvgPw9_u6-r1c2_h_Ztq6OnJWE_k8Zm-QiQzJWEeFml6s_2RdfRSK1Y4CkyY7qh2RfAibX3Yx",
+		// This example is a proof of concept, for how to use the Yelp v3 API with javascript.
 		// You wouldn't actually want to expose your access token secret like this in a real application.
-		accessTokenSecret : "uJJMS2g1BUZpy9bc-qH0pW_rHqo",
-		serviceProvider : {
-			signatureMethod : "HMAC-SHA1"
-		}
 	};
 
 	//var terms = 'food';
@@ -111,47 +105,29 @@ function loadYelpContent(currentMarker) {
 	var terms = currentMarker.name();
 	var near = 'Ruidoso';
 
-	var accessor = {
-		consumerSecret : auth.consumerSecret,
-		tokenSecret : auth.accessTokenSecret
-	};
-	var parameters = [];
-	if( !currentMarker.phone ) {
-		parameters.push(['term', terms]);
-		parameters.push(['location', near]);
-	}
-	parameters.push(['callback', 'cb']);
-	parameters.push(['oauth_consumer_key', auth.consumerKey]);
-	parameters.push(['oauth_consumer_secret', auth.consumerSecret]);
-	parameters.push(['oauth_token', auth.accessToken]);
-	parameters.push(['oauth_signature_method', 'HMAC-SHA1']);
-	
-	var yelpUrl = '';
+	var yelpUrl = 'https://cors-anywhere.herokuapp.com/';
 	if( currentMarker.phone ){
-		yelpUrl = 'https://api.yelp.com/v2/phone_search/?phone='+currentMarker.phone;
+		var phoneStr = currentMarker.phone.replace(/-/g, "");
+		yelpUrl += 'https://api.yelp.com/v3/businesses/search/phone?phone=+1'+phoneStr;
 	} else {
-		yelpUrl = 'https://api.yelp.com/v2/search/?';
+		var busStr = terms.replace(/\s+/g, '-').toLowerCase();
+		yelpUrl += 'https://api.yelp.com/v3/businesses/search?term='+busStr+'&location='+near;
 	}
 
 	var message = {
 		'action' : yelpUrl,
 		'method' : 'GET',
-		'parameters' : parameters
 	};
 
-	OAuth.setTimestampAndNonce(message);
-	OAuth.SignatureMethod.sign(message, accessor);
-
-	var parameterMap = OAuth.getParameterMap(message.parameters);
-	parameterMap.oauth_signature = OAuth.percentEncode(parameterMap.oauth_signature);
 
 	$.ajax({
 		'url' : message.action,
-		'data' : parameterMap,
+		headers: {
+			'Authorization':'Bearer '+auth.accessToken,
+		},
 		'cache' : true,
-		'dataType' : 'jsonp',
+		'dataType' : 'json',
 		'timeout' : 5000,
-		'jsonpCallback' : 'cb',
 		'success' : function(data, textStats, XMLHttpRequest) {
 			console.log("Yelp Success");
 			var contentString = '<div>'+currentMarker.name()+'<br/>Rating: '+ data.businesses[0].rating +'</div>';
