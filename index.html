@@ -5,9 +5,6 @@
 		<title>Neighborhood Map Project</title>
 		<link href="css/default-style.css" rel="stylesheet" type="text/css">
 		<link href="css/style.css" rel="stylesheet" type="text/css">
-		
-		<script src="http://oauth.googlecode.com/svn/code/javascript/oauth.js"></script>
-        <script src="http://oauth.googlecode.com/svn/code/javascript/sha1.js"></script>
 		<meta name="viewport" content="width=device-width">
 	</head>
 	<body>
@@ -35,6 +32,9 @@
 		<script src="js/lib/knockout-3.3.0.js"></script>
 		<script src="js/lib/jquery-1.11.3.js"></script>
 		<script src="js/app.js"></script>
-		<script async src="http://maps.googleapis.com/maps/api/js?libraries=places&callback=googleSuccess" onerror="googleError()""></script>
+		<script async defer
+		 src="http://maps.googleapis.com/maps/api/js?libraries=places&key=AIzaSyCxw3ga-bA7weG_hiw16BlgmUiOolaOb_8&v=3&callback=googleSuccess" 
+		 onerror="googleError()"">
+		</script>
 	</body>
 </html>
